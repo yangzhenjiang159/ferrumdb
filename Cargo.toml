@@ -1,0 +1,30 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/ferrumdb-page",
+    "crates/ferrumdb-btree",
+    "crates/ferrumdb-buffer",
+    "crates/ferrumdb-wal",
+    "crates/ferrumdb-space",
+    "crates/ferrumdb-txn",
+    "crates/ferrumdb-engine",
+    "crates/ferrumdb-protocol",
+    "crates/ferrumdb-sql",
+    "crates/ferrumdb-server",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+authors = ["FerrumDB Contributors"]
+repository = "https://github.com/your-org/ferrumdb"
+
+[workspace.dependencies]
+thiserror = "2"
+anyhow = "1"
+bytes = "1"
+crc32fast = "1"
+tokio = { version = "1", features = ["full"] }
+tracing = "0.1"
+tracing-subscriber = "0.3"

@@ -1,0 +1,19 @@
+[package]
+name = "ferrumdb-server"
+description = "TCP server for FerrumDB"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "ferrumdb-server"
+path = "src/main.rs"
+
+[dependencies]
+ferrumdb-engine = { path = "../ferrumdb-engine" }
+ferrumdb-protocol = { path = "../ferrumdb-protocol" }
+ferrumdb-sql = { path = "../ferrumdb-sql" }
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+anyhow.workspace = true

@@ -1,0 +1,11 @@
+[package]
+name = "ferrumdb-txn"
+description = "Transactions, undo log, and MVCC for FerrumDB"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+ferrumdb-page = { path = "../ferrumdb-page" }
+ferrumdb-wal = { path = "../ferrumdb-wal" }
+thiserror.workspace = true

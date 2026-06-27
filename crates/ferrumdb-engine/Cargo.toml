@@ -1,0 +1,15 @@
+[package]
+name = "ferrumdb-engine"
+description = "StorageEngine facade for FerrumDB"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+ferrumdb-page = { path = "../ferrumdb-page" }
+ferrumdb-btree = { path = "../ferrumdb-btree" }
+ferrumdb-buffer = { path = "../ferrumdb-buffer" }
+ferrumdb-wal = { path = "../ferrumdb-wal" }
+ferrumdb-space = { path = "../ferrumdb-space" }
+ferrumdb-txn = { path = "../ferrumdb-txn" }
+thiserror.workspace = true

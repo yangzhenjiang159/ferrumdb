@@ -1,0 +1,11 @@
+[package]
+name = "ferrumdb-sql"
+description = "SQL parser and executor for FerrumDB"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+ferrumdb-engine = { path = "../ferrumdb-engine" }
+ferrumdb-page = { path = "../ferrumdb-page" }
+thiserror.workspace = true
