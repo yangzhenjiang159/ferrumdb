@@ -9,3 +9,6 @@ license.workspace = true
 ferrumdb-page = { path = "../ferrumdb-page" }
 ferrumdb-space = { path = "../ferrumdb-space" }
 thiserror.workspace = true
+
+[dev-dependencies]
+tempfile = { workspace = true }

@@ -8,6 +8,7 @@ license.workspace = true
 [dependencies]
 ferrumdb-page = { path = "../ferrumdb-page" }
 ferrumdb-space = { path = "../ferrumdb-space" }
+ferrumdb-buffer = { path = "../ferrumdb-buffer" }
 thiserror.workspace = true
 
 [dev-dependencies]
