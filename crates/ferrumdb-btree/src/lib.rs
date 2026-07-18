@@ -10,8 +10,24 @@
 
 #![deny(missing_docs)]
 
+mod error;
+mod node;
+mod persist;
+mod persistent;
+mod tree;
+
+pub use error::BTreeError;
+pub use node::{Node, MIN_KEYS, ORDER};
+pub use persistent::PersistentBtree;
+pub use persist::{DecodedNode, EncodedNode, KIND_INTERNAL, KIND_LEAF};
+pub use tree::{BTree, ScanIter, Split};
+
 #[cfg(test)]
 mod tests {
+    use super::*;
+
     #[test]
-    fn crate_compiles() {}
+    fn btree_types_are_exported() {
+        let _: fn() -> BTree<i32, i32> = BTree::new;
+    }
 }

@@ -166,7 +166,7 @@ mod tests {
     #[test]
     fn storage_engine_trait_is_object_safe_and_implementable() {
         let mut engine = StubEngine;
-        let err = engine.create_table("t", Schema { columns: vec![] }).unwrap_err();
+        let err = engine.create_table("t", Schema { columns: vec![], types: vec![], primary_key: None }).unwrap_err();
         assert!(matches!(err, EngineError::Unsupported(_)));
     }
 
