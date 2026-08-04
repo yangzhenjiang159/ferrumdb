@@ -7,5 +7,9 @@ license.workspace = true
 
 [dependencies]
 ferrumdb-page = { path = "../ferrumdb-page" }
-ferrumdb-space = { path = "../ferrumdb-space" }
 thiserror.workspace = true
+crc32fast.workspace = true
+
+[dev-dependencies]
+tempfile = { workspace = true }
+ferrumdb-space = { path = "../ferrumdb-space" }

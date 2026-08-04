@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/ferrumdb-page/backend/quality-guidelines.md", "reason": "Verify no unwrap/panic in page code; tests cover happy + corruption"}
+{"file": ".trellis/spec/ferrumdb-page/backend/error-handling.md", "reason": "Verify PageError variants for encoding and page-full are added with thiserror"}
+{"file": ".trellis/spec/ferrumdb-page/backend/directory-structure.md", "reason": "Verify slotted.rs and extended row.rs match documented layout"}
+{"file": ".trellis/spec/ferrumdb-btree/backend/quality-guidelines.md", "reason": "Verify ORDER constant, no magic numbers, generic bounds"}
+{"file": ".trellis/spec/ferrumdb-btree/backend/error-handling.md", "reason": "Verify BTreeError variants for key-not-found/duplicate/invalid"}
+{"file": ".trellis/spec/ferrumdb-btree/backend/database-guidelines.md", "reason": "Verify split threshold constants + leaf chain pointers consistent"}

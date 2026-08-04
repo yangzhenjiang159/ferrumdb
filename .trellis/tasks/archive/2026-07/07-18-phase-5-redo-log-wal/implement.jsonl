@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/ferrumdb-wal/backend/database-guidelines.md", "reason": "WAL file format + record encoding + recovery algorithm"}
+{"file": ".trellis/spec/ferrumdb-wal/backend/error-handling.md", "reason": "WalError variants"}
+{"file": ".trellis/spec/ferrumdb-wal/backend/directory-structure.md", "reason": "Target file layout for error.rs, record.rs, wal.rs"}
+{"file": ".trellis/spec/ferrumdb-wal/backend/quality-guidelines.md", "reason": "fsync rules, Truncated handling, recovery test"}
+{"file": ".trellis/spec/ferrumdb-space/backend/database-guidelines.md", "reason": "Space is recovery target"}
+{"file": ".trellis/tasks/archive/2026-07/07-18-phase-3-persistent-btree-and-space/research/lessons.md", "reason": "Phase 3 Space page-id design applies"}

@@ -1,0 +1,7 @@
+{"file": ".trellis/spec/ferrumdb-buffer/backend/database-guidelines.md", "reason": "Frame layout + LRU eviction + dirty flush policy"}
+{"file": ".trellis/spec/ferrumdb-buffer/backend/error-handling.md", "reason": "BufferError variants"}
+{"file": ".trellis/spec/ferrumdb-buffer/backend/directory-structure.md", "reason": "Target file layout for pool.rs, frame.rs, guard.rs, etc."}
+{"file": ".trellis/spec/ferrumdb-buffer/backend/quality-guidelines.md", "reason": "PageGuard RAII + lock ordering + testing"}
+{"file": ".trellis/spec/ferrumdb-btree/backend/database-guidelines.md", "reason": "PersistentBtree going through PageSource (unchanged)"}
+{"file": ".trellis/spec/ferrumdb-space/backend/database-guidelines.md", "reason": "PageSource trait abstraction"}
+{"file": ".trellis/tasks/archive/2026-07/07-18-phase-3-persistent-btree-and-space/research/lessons.md", "reason": "Phase 3 lessons on PageSource apply"}

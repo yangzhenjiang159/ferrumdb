@@ -13,3 +13,8 @@ thiserror.workspace = true
 
 [dev-dependencies]
 tempfile = { workspace = true }
+
+[[example]]
+name = "crud"
+path = "examples/crud.rs"
+

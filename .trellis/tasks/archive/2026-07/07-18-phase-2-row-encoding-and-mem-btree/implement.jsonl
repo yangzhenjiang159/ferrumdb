@@ -1,0 +1,9 @@
+{"file": ".trellis/spec/ferrumdb-page/backend/database-guidelines.md", "reason": "Row encoding format + Slotted Page layout conventions"}
+{"file": ".trellis/spec/ferrumdb-page/backend/error-handling.md", "reason": "PageError variants (planned EncodingError, PageFull additions)"}
+{"file": ".trellis/spec/ferrumdb-page/backend/directory-structure.md", "reason": "Target file layout for slotted.rs and extended row.rs"}
+{"file": ".trellis/spec/ferrumdb-page/backend/quality-guidelines.md", "reason": "Forbidden patterns (no unwrap, no unsafe, no async) + testing requirements"}
+{"file": ".trellis/spec/ferrumdb-btree/backend/database-guidelines.md", "reason": "B+Tree node layout, split threshold, ORDER constant target"}
+{"file": ".trellis/spec/ferrumdb-btree/backend/error-handling.md", "reason": "BTreeError variants (planned KeyNotFound, DuplicateKey, InvalidNodeKind)"}
+{"file": ".trellis/spec/ferrumdb-btree/backend/directory-structure.md", "reason": "Target file layout for error.rs, node.rs, tree.rs, iter.rs"}
+{"file": ".trellis/spec/ferrumdb-btree/backend/quality-guidelines.md", "reason": "split threshold constants, generic bounds, test requirements"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Cross-crate guidance for Row/Value reuse"}

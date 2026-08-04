@@ -1,0 +1,9 @@
+{"file": ".trellis/spec/ferrumdb-space/backend/database-guidelines.md", "reason": "Disk layout + superblock + free-list conventions"}
+{"file": ".trellis/spec/ferrumdb-space/backend/error-handling.md", "reason": "SpaceError variants for phase 3"}
+{"file": ".trellis/spec/ferrumdb-space/backend/directory-structure.md", "reason": "Target file layout for space.rs, superblock.rs, free_list.rs, page_source.rs"}
+{"file": ".trellis/spec/ferrumdb-space/backend/quality-guidelines.md", "reason": "fsync rules, no PAGE_SIZE redefinition, single offset_of helper"}
+{"file": ".trellis/spec/ferrumdb-btree/backend/database-guidelines.md", "reason": "Node serialization format + PersistentBtree layout"}
+{"file": ".trellis/spec/ferrumdb-btree/backend/error-handling.md", "reason": "BTreeError variants for phase 3 (Space, InvalidNodeKind)"}
+{"file": ".trellis/spec/ferrumdb-btree/backend/directory-structure.md", "reason": "persist.rs new file"}
+{"file": ".trellis/spec/ferrumdb-page/backend/database-guidelines.md", "reason": "Page encoding format reused for node pages"}
+{"file": ".trellis/tasks/archive/2026-07/07-18-phase-2-row-encoding-and-mem-btree/research/lessons.md", "reason": "Phase 2 lessons apply to phase 3 (offset confusion, deny(missing_docs) gotchas)"}

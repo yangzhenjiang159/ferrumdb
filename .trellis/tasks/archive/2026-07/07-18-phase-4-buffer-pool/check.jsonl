@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/ferrumdb-buffer/backend/quality-guidelines.md", "reason": "Verify PageGuard RAII; lock order documented; no unwrap"}
+{"file": ".trellis/spec/ferrumdb-buffer/backend/error-handling.md", "reason": "Verify BufferError variants"}
+{"file": ".trellis/spec/ferrumdb-buffer/backend/database-guidelines.md", "reason": "Verify dirty-before-evict policy"}
+{"file": ".trellis/spec/ferrumdb-buffer/backend/directory-structure.md", "reason": "Verify pool.rs/frame.rs/guard.rs/source.rs exist"}

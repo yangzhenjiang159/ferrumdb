@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/ferrumdb-space/backend/quality-guidelines.md", "reason": "Verify fsync after every metadata mutation; no PAGE_SIZE redefinition"}
+{"file": ".trellis/spec/ferrumdb-space/backend/error-handling.md", "reason": "Verify SpaceError variants match implementation"}
+{"file": ".trellis/spec/ferrumdb-space/backend/directory-structure.md", "reason": "Verify space.rs/superblock.rs/free_list.rs/page_source.rs exist"}
+{"file": ".trellis/spec/ferrumdb-btree/backend/quality-guidelines.md", "reason": "Verify persist.rs uses PageType::Index; no direct file I/O"}
+{"file": ".trellis/spec/ferrumdb-btree/backend/error-handling.md", "reason": "Verify Space + InvalidNodeKind variants added"}
+{"file": ".trellis/spec/ferrumdb-btree/backend/database-guidelines.md", "reason": "Verify node serialization format documented"}
