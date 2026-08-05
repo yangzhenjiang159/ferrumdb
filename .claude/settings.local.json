@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(trellis --version)",
+      "Bash(echo \"exit: $?\")",
+      "Bash(cat .trellis/scripts/*)",
+      "Read(//c/Users/19833/**)",
+      "Bash(pip show:*)",
+      "Bash(pip3 show:*)",
+      "Bash(pip list:*)",
+      "WebSearch",
+      "Bash(cat .claude/commands/*)",
+      "Bash(npm --version)",
+      "Bash(npm config:*)",
+      "Bash(echo \"py exit: $?\")",
+      "Bash(echo \"py3 exit: $?\")",
+      "Bash(py --version)",
+      "Bash(echo \"py launcher exit: $?\")",
+      "Bash(npm view:*)",
+      "Bash(npm install:*)",
+      "Bash(trellis --help)",
+      "Bash(trellis update:*)",
+      "Bash(trellis platforms:*)"
+    ]
+  }
+}

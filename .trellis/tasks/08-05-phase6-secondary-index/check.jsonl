@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/ferrumdb-btree/backend/quality-guidelines.md", "reason": "B+Tree 质量门：分裂路径随机键测试、范围扫描边界、依赖约束"}
+{"file": ".trellis/spec/ferrumdb-engine/backend/quality-guidelines.md", "reason": "engine 质量门：trait object-safe、doc、错误变体覆盖"}
+{"file": ".trellis/spec/ferrumdb-page/backend/quality-guidelines.md", "reason": "编码 round-trip 与边界测试要求（新增 key 模块）"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "跨层数据流（page 编码→btree→engine→回表）审查清单"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "编码/解码复用与常量集中，避免重复实现"}

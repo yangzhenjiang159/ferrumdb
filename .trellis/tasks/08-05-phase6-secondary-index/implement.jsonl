@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/ferrumdb-btree/backend/index.md", "reason": "二级索引设计背景与 btree 依赖约束（不得依赖 buffer/wal/space），阶段 6 归属"}
+{"file": ".trellis/spec/ferrumdb-btree/backend/database-guidelines.md", "reason": "B+Tree 叶子链、分裂规则、键值字节约定，insert/get/scan_range 语义"}
+{"file": ".trellis/spec/ferrumdb-engine/backend/index.md", "reason": "StorageEngine trait 契约、FerrumEngine 阶段归属、object-safe 要求"}
+{"file": ".trellis/spec/ferrumdb-engine/backend/database-guidelines.md", "reason": "trait 方法语义、跨层接线边界（本阶段最小引擎）"}
+{"file": ".trellis/spec/ferrumdb-page/backend/database-guidelines.md", "reason": "Row/Value/ColumnType 编码约定；key 保序编码放哪层"}
+{"file": "docs/plan.md", "reason": "阶段 6 目标、实现步骤与验收标准（研究资料，非 spec）"}
