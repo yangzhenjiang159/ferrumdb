@@ -17,6 +17,9 @@ pub enum EngineError {
     #[error("duplicate key")]
     DuplicateKey,
 
+    #[error("row not found: {0}")]
+    RowNotFound(String),
+
     #[error("unsupported: {0}")]
     Unsupported(String),
 
@@ -29,9 +32,13 @@ pub enum EngineError {
 
 | Category | Variants | Purpose |
 |----------|----------|---------|
-| User-visible | `TableNotFound`, `DuplicateKey` | Caller can react (different table, retry with new key) |
+| User-visible | `TableNotFound`, `DuplicateKey`, `RowNotFound` | Caller can react (different table, retry with new key, retry with existing row) |
 | Not-yet-implemented | `Unsupported(String)` | Phase 9 methods return this until phase 9 lands |
 | System-level | `Internal(String)` | I/O, corruption, assertion failures |
+
+阶段 7a 引入 `RowNotFound`（阶段 7 之前 `update` 对不存在的行返回 `Unsupported`/`Internal`）。
+语义约定：`update` 对存在表但不存在行 → `RowNotFound`；`delete` 幂等（行不存在 → `Ok(())`，
+不返回 `RowNotFound`）；`drop_table` 对不存在表 → `TableNotFound`。
 
 ## Conventions
 

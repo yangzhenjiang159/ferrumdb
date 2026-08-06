@@ -7,10 +7,10 @@ Defined in `crates/ferrumdb-engine/src/engine.rs`:
 | Method | Phase | Returns |
 |--------|-------|---------|
 | `create_table(name, schema)` | 6（最小引擎）/ 7（完整） | `Result<(), EngineError>` |
-| `drop_table(name)` | 7 | `Result<(), EngineError>` |
+| `drop_table(name)` | 7a | `Result<(), EngineError>` |
 | `insert(table, row)` | 6（最小引擎）/ 7（完整） | `Result<(), EngineError>` |
-| `update(table, pk, row)` | 7 | `Result<(), EngineError>` |
-| `delete(table, pk)` | 7 | `Result<(), EngineError>` |
+| `update(table, pk, row)` | 7a | `Result<(), EngineError>` |
+| `delete(table, pk)` | 7a | `Result<(), EngineError>` |
 | `get_by_pk(table, pk)` | 6（最小引擎）/ 7（完整） | `Result<Option<Row>, EngineError>` |
 | `scan(table, range)` | 6 | `Result<RowIterator, EngineError>` |
 | `create_index(table, meta)` | 6 | `Result<(), EngineError>` |

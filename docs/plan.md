@@ -76,7 +76,8 @@ flowchart LR
 | `create_table` | 6（最小引擎）/ 7（完整） |
 | `create_index` / `get_by_index` / `scan_index` | 6 |
 | `insert` | 6（最小引擎） |
-| `update` / `delete` | 7 |
+| `update` / `delete` | 7a |
+| `drop_table` | 7a |
 | `get_by_pk` | 6（最小引擎）/ 7（完整） |
 | `scan`（聚簇） | 6 |
 | `begin` / `commit` / `rollback` | 9 |

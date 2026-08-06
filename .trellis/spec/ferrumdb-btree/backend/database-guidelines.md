@@ -139,6 +139,17 @@ Returns `ScanIter<'a, K, V>` — borrowing iterator over leaf chain via raw poin
 | 2 (memory) | `BTree::new`, `insert`, `get`, `delete`, `scan_range`, `scan_all` | Touch disk |
 | 3 (persistent) | Above + `PersistentBtree::create`, `open`, `insert`, `get`, `scan_range` + 节点 ↔ Page | Open files; that's `ferrumdb-space`'s job |
 | 6 (secondary index) | `(idx_key, pk)` leaf layout | Call back into `ferrumdb-engine` |
+| 7a (DML) | `delete` walks leaf chain; `all_node_page_ids` | — |
+
+## 阶段 7a 事实
+
+- **`PersistentBtree::delete` 与 `get` 一样沿叶子链表遍历**：B+Tree 的 key 不一定落在
+  分隔键匹配的同一叶子；v1 只查下探到的第一个叶子会漏删。修复后：
+  当前叶子 `idx >= keys.len()` 时沿 `next_leaf` 继续，`key < keys[idx]` 时判定不存在。
+- **不做下溢 rebalance/merge**（v2）：删除可能使叶子键数 < `MIN_KEYS`，但不破坏正确性。
+- **`all_node_page_ids(source)`**：BFS/DFS 返回树中全部节点页 id（root + 内部 + 叶子），
+  内部去重；供 `ferrumdb-engine::drop_table` 释放页（`Space::free_page`）。返回页均为
+  `PageType::Index`，不含 superblock（页 0）。
 
 ## Anti-Patterns
 
