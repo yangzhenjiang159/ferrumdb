@@ -13,3 +13,6 @@ ferrumdb-wal = { path = "../ferrumdb-wal" }
 ferrumdb-space = { path = "../ferrumdb-space" }
 ferrumdb-txn = { path = "../ferrumdb-txn" }
 thiserror.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

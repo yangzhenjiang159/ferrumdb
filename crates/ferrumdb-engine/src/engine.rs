@@ -7,13 +7,30 @@ use ferrumdb_page::{Row, Schema, Value};
 /// 阶段 9 起用于 `begin` / `commit` / `rollback` 的会话内事务跟踪。
 pub type TransactionId = u64;
 
+/// 二级索引元数据。
+///
+/// - `name`: 索引名，供 [`StorageEngine::get_by_index`] / [`StorageEngine::scan_index`] 定位
+/// - `columns`: 索引列的列下标（引用 [`Schema::columns`]，下标非空且须在 schema 内）
+/// - `is_unique`: 是否唯一索引
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct IndexMeta {
+    /// 索引名（表内唯一）。
+    pub name: String,
+    /// 构成索引的列下标（引用 schema 的列下标）。
+    pub columns: Vec<usize>,
+    /// 是否强制唯一性。
+    pub is_unique: bool,
+}
+
 /// 范围扫描的上下界（闭区间或半开区间，阶段 6 细化语义）。
 ///
 /// - `start`: 起始键（含）；`None` 表示从最小键开始
 /// - `end`: 结束键；`None` 表示到最大键结束
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RangeBound {
+    /// 起始键（含）；`None` 表示从最小键开始。
     pub start: Option<Value>,
+    /// 结束键（排他）；`None` 表示到最大键结束。
     pub end: Option<Value>,
 }
 
@@ -59,10 +76,11 @@ pub enum EngineError {
 ///
 /// | 方法 | 计划阶段 |
 /// |------|----------|
-/// | `create_table` / `drop_table` | 7 |
-/// | `insert` / `update` / `delete` | 7 |
-/// | `get_by_pk` | 7 |
+/// | `create_table` / `drop_table` | 7（阶段 6 实现 `create_table`） |
+/// | `insert` / `update` / `delete` | 7（阶段 6 实现 `insert`） |
+/// | `get_by_pk` | 7（阶段 6 实现） |
 /// | `scan` | 6 |
+/// | `create_index` / `get_by_index` / `scan_index` | 6 |
 /// | `begin` / `commit` / `rollback` | 9 |
 pub trait StorageEngine {
     /// 创建一张新表并持久化元数据。
@@ -97,10 +115,48 @@ pub trait StorageEngine {
     /// 聚簇索引点查：按主键返回完整行。
     fn get_by_pk(&self, table: &str, pk: Value) -> Result<Option<Row>, EngineError>;
 
-    /// 范围扫描：按 `range` 在聚簇或二级索引上顺序返回行（阶段 6）。
+    /// 范围扫描：按 `range` 在聚簇索引上顺序返回行。
     ///
-    /// 二级索引扫描时引擎内部完成回表。
+    /// 结果按主键升序返回。
     fn scan<'a>(&'a self, table: &str, range: RangeBound) -> Result<RowIterator<'a>, EngineError>;
+
+    /// 在表上创建二级索引。
+    ///
+    /// - `meta.columns` 中的下标须落在 schema 列数内且非空，否则返回 `Internal`
+    /// - 索引名与已存在索引或表内重名时返回 `Internal`
+    ///
+    /// # Errors
+    ///
+    /// - `EngineError::TableNotFound` 表不存在
+    /// - `EngineError::Internal` 列下标非法、索引重名或分配页失败
+    fn create_index(&mut self, table: &str, meta: IndexMeta) -> Result<(), EngineError>;
+
+    /// 二级索引点查：按索引键返回一条完整行。
+    ///
+    /// 引擎先查二级索引得到主键，再回表聚簇索引。非唯一索引返回匹配该索引键的
+    /// 第一行（主键最小）；键不存在返回 `None`。
+    ///
+    /// # Errors
+    ///
+    /// - `EngineError::TableNotFound` 表不存在
+    /// - `EngineError::Internal` 索引不存在或索引键无法编码
+    fn get_by_index(&self, table: &str, index: &str, key: Value)
+        -> Result<Option<Row>, EngineError>;
+
+    /// 二级索引范围扫描：按 `range` 在指定索引上顺序返回行，结果按索引键升序。
+    ///
+    /// 每条记录内部完成回表（二级 → 主键 → 聚簇取整行）。
+    ///
+    /// # Errors
+    ///
+    /// - `EngineError::TableNotFound` 表不存在
+    /// - `EngineError::Internal` 索引不存在或边界值无法编码
+    fn scan_index<'a>(
+        &'a self,
+        table: &str,
+        index: &str,
+        range: RangeBound,
+    ) -> Result<RowIterator<'a>, EngineError>;
 
     /// 开启事务，返回事务 ID（阶段 9）。
     ///
@@ -148,6 +204,28 @@ mod tests {
 
         fn scan<'a>(&'a self, _: &str, _: RangeBound) -> Result<RowIterator<'a>, EngineError> {
             Err(EngineError::Unsupported("scan".into()))
+        }
+
+        fn create_index(&mut self, _: &str, _: IndexMeta) -> Result<(), EngineError> {
+            Err(EngineError::Unsupported("create_index".into()))
+        }
+
+        fn get_by_index(
+            &self,
+            _: &str,
+            _: &str,
+            _: Value,
+        ) -> Result<Option<Row>, EngineError> {
+            Err(EngineError::Unsupported("get_by_index".into()))
+        }
+
+        fn scan_index<'a>(
+            &'a self,
+            _: &str,
+            _: &str,
+            _: RangeBound,
+        ) -> Result<RowIterator<'a>, EngineError> {
+            Err(EngineError::Unsupported("scan_index".into()))
         }
 
         fn begin(&mut self) -> Result<TransactionId, EngineError> {
