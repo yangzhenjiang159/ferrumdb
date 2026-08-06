@@ -120,6 +120,17 @@ impl TableCatalog {
         Ok(())
     }
 
+    /// 移除一张表并返回其元数据（供调用方释放树占用的页）。
+    ///
+    /// # Errors
+    ///
+    /// - `EngineError::TableNotFound` 表不存在
+    pub fn remove(&mut self, table: &str) -> Result<TableMeta, EngineError> {
+        self.tables
+            .remove(table)
+            .ok_or_else(|| EngineError::TableNotFound(table.to_string()))
+    }
+
     /// 取出表中某个二级索引的引用。
     ///
     /// # Errors

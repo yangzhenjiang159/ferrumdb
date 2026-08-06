@@ -109,6 +109,11 @@ impl FerrumEngine {
         Ok((clustered, indexes))
     }
 
+    /// 表空间当前包含的页数（调试/测试用）。
+    pub fn page_count(&self) -> u32 {
+        self.space.borrow().page_count()
+    }
+
     /// 探测唯一索引：二级树中是否已存在以 `index_key` 开头的 key。
     ///
     /// 由于编码前缀无关，`scan_range(P, successor(P))` 精确返回所有以 `P` 开头的
@@ -140,8 +145,33 @@ impl StorageEngine for FerrumEngine {
         self.catalog.add_table(name.into(), schema, tree)
     }
 
-    fn drop_table(&mut self, _name: &str) -> Result<(), EngineError> {
-        Err(EngineError::Unsupported("drop_table (phase 7)".into()))
+    fn drop_table(&mut self, name: &str) -> Result<(), EngineError> {
+        // 1. 从 catalog 取走表元数据（含全部树句柄）。
+        let meta = self.catalog.remove(name)?;
+        // 2. 收集聚簇 + 全部二级树的节点页 id（各树内部已去重；树间页 id 不重叠）。
+        let mut page_ids = Vec::new();
+        {
+            let mut space = self.space.borrow_mut();
+            page_ids.extend(
+                meta.clustered
+                    .all_node_page_ids(&mut *space)
+                    .map_err(btree_err)?,
+            );
+            for entry in &meta.indexes {
+                page_ids.extend(
+                    entry
+                        .tree
+                        .all_node_page_ids(&mut *space)
+                        .map_err(btree_err)?,
+                );
+            }
+        }
+        // 3. 释放所有页（跳过页 0 superblock，free_page 内部也会拒绝）。
+        let mut space = self.space.borrow_mut();
+        for page_id in page_ids {
+            space.free_page(page_id).map_err(space_err)?;
+        }
+        Ok(())
     }
 
     fn insert(&mut self, table: &str, row: Row) -> Result<(), EngineError> {
@@ -208,12 +238,133 @@ impl StorageEngine for FerrumEngine {
         Ok(())
     }
 
-    fn update(&mut self, _table: &str, _pk: Value, _row: Row) -> Result<(), EngineError> {
-        Err(EngineError::Unsupported("update (phase 7)".into()))
+    fn update(&mut self, table: &str, pk: Value, row: Row) -> Result<(), EngineError> {
+        let schema = self.catalog.get(table)?.schema.clone();
+        if row.values.len() != schema.columns.len() {
+            return Err(EngineError::Internal(format!(
+                "row has {} values, schema expects {}",
+                row.values.len(),
+                schema.columns.len()
+            )));
+        }
+        let pk_idx = self.pk_index(table)?;
+        // 主键列不可变（KD2）：新行 pk 列必须等于参数 pk。
+        if row.values[pk_idx] != pk {
+            return Err(EngineError::Internal(
+                "update cannot change the primary key column".into(),
+            ));
+        }
+        let pk_bytes = encode_pk(&row, &schema).map_err(page_err)?;
+
+        // 1. 定位旧行；不存在 → RowNotFound。
+        let old_row = {
+            let mut space = self.space.borrow_mut();
+            let meta = self.catalog.get(table)?;
+            match meta.clustered.get(&mut *space, &pk_bytes).map_err(btree_err)? {
+                Some(bytes) => decode_row(&bytes, &schema).map_err(page_err)?,
+                None => return Err(EngineError::RowNotFound(format!("pk = {pk:?}"))),
+            }
+        };
+
+        // 2. 唯一索引探测（针对索引列值会变化且唯一索引可能撞键的场景）。
+        //    对每个唯一索引，若新旧索引值不同，探测新值是否已存在（先探测后写）。
+        {
+            let mut space = self.space.borrow_mut();
+            let meta = self.catalog.get(table)?;
+            for entry in &meta.indexes {
+                if !entry.meta.is_unique {
+                    continue;
+                }
+                let old_vals = Self::index_values(&entry.meta, &old_row)?;
+                let new_vals = Self::index_values(&entry.meta, &row)?;
+                if old_vals == new_vals {
+                    continue;
+                }
+                let new_key = encode_index_key(&new_vals);
+                if Self::unique_index_conflict(&mut space, &entry.tree, &new_key)? {
+                    return Err(EngineError::DuplicateKey);
+                }
+            }
+        }
+
+        // 3. 二级索引：索引列值变化 → 删旧插新。
+        {
+            let mut space = self.space.borrow_mut();
+            let meta = self.catalog.get_mut(table)?;
+            for entry in &mut meta.indexes {
+                let old_vals = Self::index_values(&entry.meta, &old_row)?;
+                let new_vals = Self::index_values(&entry.meta, &row)?;
+                if old_vals == new_vals {
+                    continue;
+                }
+                let old_full_key = encode_secondary_key(&old_vals, &pk);
+                if !entry.tree.delete(&mut *space, &old_full_key).map_err(btree_err)? {
+                    return Err(EngineError::Internal(format!(
+                        "update: secondary index {} missing old entry",
+                        entry.meta.name
+                    )));
+                }
+                let new_full_key = encode_secondary_key(&new_vals, &pk);
+                entry
+                    .tree
+                    .insert(&mut *space, new_full_key, pk_bytes.clone())
+                    .map_err(btree_err)?;
+            }
+        }
+
+        // 4. 聚簇覆盖写新行。
+        {
+            let mut space = self.space.borrow_mut();
+            let meta = self.catalog.get_mut(table)?;
+            let new_bytes = encode_row(&row, &schema).map_err(page_err)?;
+            meta.clustered
+                .insert(&mut *space, pk_bytes, new_bytes)
+                .map_err(btree_err)?;
+        }
+        Ok(())
     }
 
-    fn delete(&mut self, _table: &str, _pk: Value) -> Result<(), EngineError> {
-        Err(EngineError::Unsupported("delete (phase 7)".into()))
+    fn delete(&mut self, table: &str, pk: Value) -> Result<(), EngineError> {
+        let schema = self.catalog.get(table)?.schema.clone();
+        let pk_bytes = encode_key(&pk);
+
+        // 1. 定位旧行；不存在 → 幂等 Ok(())。
+        let old_row = {
+            let mut space = self.space.borrow_mut();
+            let meta = self.catalog.get(table)?;
+            match meta.clustered.get(&mut *space, &pk_bytes).map_err(btree_err)? {
+                Some(bytes) => decode_row(&bytes, &schema).map_err(page_err)?,
+                None => return Ok(()),
+            }
+        };
+
+        // 2. 删所有二级索引项。
+        {
+            let mut space = self.space.borrow_mut();
+            let meta = self.catalog.get_mut(table)?;
+            for entry in &mut meta.indexes {
+                let index_vals = Self::index_values(&entry.meta, &old_row)?;
+                let full_key = encode_secondary_key(&index_vals, &pk);
+                if !entry.tree.delete(&mut *space, &full_key).map_err(btree_err)? {
+                    return Err(EngineError::Internal(format!(
+                        "delete: secondary index {} missing entry",
+                        entry.meta.name
+                    )));
+                }
+            }
+        }
+
+        // 3. 删聚簇行。
+        {
+            let mut space = self.space.borrow_mut();
+            let meta = self.catalog.get_mut(table)?;
+            if !meta.clustered.delete(&mut *space, &pk_bytes).map_err(btree_err)? {
+                return Err(EngineError::Internal(
+                    "delete: clustered tree missing row".into(),
+                ));
+            }
+        }
+        Ok(())
     }
 
     fn get_by_pk(&self, table: &str, pk: Value) -> Result<Option<Row>, EngineError> {

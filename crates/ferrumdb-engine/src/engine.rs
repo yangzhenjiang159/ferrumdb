@@ -58,6 +58,10 @@ pub enum EngineError {
     #[error("duplicate key")]
     DuplicateKey,
 
+    /// 按主键定位的行不存在（`update` 等需要「定位已有行」的操作）。
+    #[error("row not found: {0}")]
+    RowNotFound(String),
+
     /// 当前阶段尚未实现的能力。
     #[error("unsupported: {0}")]
     Unsupported(String),
@@ -106,10 +110,25 @@ pub trait StorageEngine {
     /// 引擎负责更新聚簇索引与所有二级索引（阶段 6 起）。
     fn insert(&mut self, table: &str, row: Row) -> Result<(), EngineError>;
 
-    /// 按主键更新已有行；不存在时返回 `TableNotFound` 或 `Internal`（阶段 7 定稿）。
+    /// 按主键更新已有行；主键列不可变（`row` 中 pk 列须等于 `pk`）。
+    ///
+    /// 引擎负责同步维护所有二级索引（索引列值变化时删旧插新）。
+    ///
+    /// # Errors
+    ///
+    /// - `EngineError::TableNotFound` 表不存在
+    /// - `EngineError::RowNotFound` 表存在但 `pk` 对应的行不存在
+    /// - `EngineError::DuplicateKey` 更新后与唯一索引冲突
+    /// - `EngineError::Internal` 主键列被改变或编码失败
     fn update(&mut self, table: &str, pk: Value, row: Row) -> Result<(), EngineError>;
 
-    /// 按主键删除一行。
+    /// 按主键删除一行，并同步删除所有二级索引项。
+    ///
+    /// 幂等：行不存在返回 `Ok(())`（与 MySQL `DELETE` 0 rows 语义一致）。
+    ///
+    /// # Errors
+    ///
+    /// - `EngineError::TableNotFound` 表不存在
     fn delete(&mut self, table: &str, pk: Value) -> Result<(), EngineError>;
 
     /// 聚簇索引点查：按主键返回完整行。
