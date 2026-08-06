@@ -2,17 +2,20 @@
 
 ## Trait Contract (current)
 
-Defined in `crates/ferrumdb-engine/src/engine.rs:46-99`:
+Defined in `crates/ferrumdb-engine/src/engine.rs`:
 
 | Method | Phase | Returns |
 |--------|-------|---------|
-| `create_table(name, schema)` | 7 | `Result<(), EngineError>` |
+| `create_table(name, schema)` | 6（最小引擎）/ 7（完整） | `Result<(), EngineError>` |
 | `drop_table(name)` | 7 | `Result<(), EngineError>` |
-| `insert(table, row)` | 7 | `Result<(), EngineError>` |
+| `insert(table, row)` | 6（最小引擎）/ 7（完整） | `Result<(), EngineError>` |
 | `update(table, pk, row)` | 7 | `Result<(), EngineError>` |
 | `delete(table, pk)` | 7 | `Result<(), EngineError>` |
-| `get_by_pk(table, pk)` | 7 | `Result<Option<Row>, EngineError>` |
+| `get_by_pk(table, pk)` | 6（最小引擎）/ 7（完整） | `Result<Option<Row>, EngineError>` |
 | `scan(table, range)` | 6 | `Result<RowIterator, EngineError>` |
+| `create_index(table, meta)` | 6 | `Result<(), EngineError>` |
+| `get_by_index(table, index, key)` | 6 | `Result<Option<Row>, EngineError>` |
+| `scan_index(table, index, range)` | 6 | `Result<RowIterator, EngineError>` |
 | `begin()` | 9 | `Result<TransactionId, EngineError>` |
 | `commit(tx)` | 9 | `Result<(), EngineError>` |
 | `rollback(tx)` | 9 | `Result<(), EngineError>` |

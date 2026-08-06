@@ -11,10 +11,14 @@ implementation `FerrumEngine`. It is the integration point that wires
 together `ferrumdb-page`, `ferrumdb-btree`, `ferrumdb-buffer`,
 `ferrumdb-wal`, `ferrumdb-space`, and `ferrumdb-txn`.
 
-The crate today contains **only the trait skeleton** in
-`crates/ferrumdb-engine/src/engine.rs` — `StorageEngine`, `EngineError`,
-`RangeBound`, `RowIterator`, and `TransactionId`. There is no implementation
-yet; that lands in phase 7 per `docs/plan.md`.
+The trait skeleton lives in `crates/ferrumdb-engine/src/engine.rs` —
+`StorageEngine`, `EngineError`, `RangeBound`, `RowIterator`, `IndexMeta`,
+and `TransactionId`. Since **阶段 6** there is a minimal implementation
+`FerrumEngine` (`crates/ferrumdb-engine/src/ferrum_engine.rs`) with an
+in-memory catalog (`catalog.rs`): it implements `create_table` /
+`create_index` / `insert` / `get_by_pk` / `get_by_index` / `scan` /
+`scan_index` on top of `ferrumdb-space::Space` + `PersistentBtree`; other
+methods return `Unsupported` until phase 7/9.
 
 Real definitions from `crates/ferrumdb-engine/src/engine.rs`:
 
@@ -23,8 +27,10 @@ pub type TransactionId = u64;                                // line 6
 pub struct RangeBound { pub start: Option<Value>, pub end: Option<Value> }  // line 17
 pub type RowIterator<'a> = Box<dyn Iterator<Item = Result<Row, EngineError>> + 'a>;  // line 30
 pub enum EngineError { TableNotFound, DuplicateKey, Unsupported, Internal } // line 33
+pub struct IndexMeta { name, columns: Vec<usize>, is_unique } // 阶段 6
 pub trait StorageEngine { /* create_table, drop_table, insert, update, delete,
-                              get_by_pk, scan, begin, commit, rollback */ }
+                              get_by_pk, scan, create_index, get_by_index,
+                              scan_index, begin, commit, rollback */ }
 ```
 
 ---

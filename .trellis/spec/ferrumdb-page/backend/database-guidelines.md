@@ -132,3 +132,23 @@ pub struct Schema {
 ```
 
 `Schema::from_names(...)` is a convenience for tests; production code must provide `types`.
+
+## Key Encoding (phase 6) — `key.rs`
+
+B+Tree keys use a **separate order-preserving encoding** (module `key.rs`,
+`encode_key` / `decode_key` / `encode_pk` / `encode_secondary_key` /
+`upper_bound` / `successor`). `encode_row` is NOT order-preserving (I64 LE,
+Bytes length-prefixed), so it cannot be used as a tree key.
+
+| `Value` | Encoding |
+|---------|----------|
+| `Null` | `0x00` |
+| `I64(v)` | `0x01` ++ `((v as u64) ^ 1<<63)` big-endian (8 B) |
+| `Bytes(b)` | `0x02` ++ `0x00`→`0x00 0xFF` escaped ++ `0x00 0x00` terminator |
+
+- **Type tag** (first byte) makes all encodings prefix-free (e.g. `i64::MIN`
+  flips to `[0;8]`; without the tag it would collide with `Null`'s `[0x00]`).
+- **Big-endian** inside keys (order-preserving) — the little-endian rule above
+  applies to page/row codecs, not key ordering.
+- Secondary composite key = `index_key_enc ∥ pk_enc`; prefix scans use
+  `successor(P)` as the exclusive upper bound for `scan_range(P, successor(P))`.

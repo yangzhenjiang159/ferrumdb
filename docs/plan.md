@@ -73,10 +73,12 @@ flowchart LR
 
 | 方法 | 阶段 |
 |------|------|
-| `create_table` | 7 |
-| `insert` / `update` / `delete` | 7 |
-| `get_by_pk` | 7 |
-| `scan_range` | 6 |
+| `create_table` | 6（最小引擎）/ 7（完整） |
+| `create_index` / `get_by_index` / `scan_index` | 6 |
+| `insert` | 6（最小引擎） |
+| `update` / `delete` | 7 |
+| `get_by_pk` | 6（最小引擎）/ 7（完整） |
+| `scan`（聚簇） | 6 |
 | `begin` / `commit` / `rollback` | 9 |
 
 ---
@@ -312,9 +314,11 @@ WAL：先写 log 再改页；崩溃后 redo 恢复已提交修改。
 
 ### 验收标准
 
-- [ ] 二级索引点查正确
-- [ ] 范围扫描 + 回表结果正确
-- [ ] 同一 pk 多二级索引一致
+- [x] 二级索引点查正确（`get_by_index`，见 `crates/ferrumdb-engine/src/integration.rs`）
+- [x] 范围扫描 + 回表结果正确（`scan_index`）
+- [x] 同一 pk 多二级索引一致
+- [x] 唯一索引冲突返回 `DuplicateKey` 且无部分写入（阶段 6 已实现，用户确认）
+- [x] 存储层持久化（记录 root id 重开 `PersistentBtree` 验证，AC4）
 
 ---
 
