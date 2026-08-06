@@ -1,0 +1,29 @@
+{
+  "id": "phase7-engine",
+  "name": "phase7-engine",
+  "title": "阶段 7：StorageEngine 整合",
+  "description": "",
+  "status": "planning",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P2",
+  "creator": "yangzhenjiang",
+  "assignee": "yangzhenjiang",
+  "createdAt": "2026-08-06",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "master",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [
+    "08-06-phase7a-dml",
+    "08-06-phase7b-persistence"
+  ],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {}
+}

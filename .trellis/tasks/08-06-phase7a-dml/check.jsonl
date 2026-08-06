@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/ferrumdb-engine/backend/quality-guidelines.md", "reason": "engine 质量门：object-safe、doc、错误变体覆盖、scan 物化限制"}
+{"file": ".trellis/spec/ferrumdb-btree/backend/quality-guidelines.md", "reason": "B+Tree 质量门：分裂/删除路径随机键测试、叶子链边界"}
+{"file": ".trellis/spec/ferrumdb-engine/backend/error-handling.md", "reason": "错误变体匹配完整性；RowNotFound 使用点"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "跨层数据流（engine → btree → space 页释放）审查清单"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "delete/scan 叶子链遍历逻辑复用 get，避免重复实现"}

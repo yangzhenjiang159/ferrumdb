@@ -1,0 +1,7 @@
+{"file": ".trellis/spec/ferrumdb-engine/backend/index.md", "reason": "FerrumEngine 阶段归属、跨层接线边界（WAL/catalog 归 engine）"}
+{"file": ".trellis/spec/ferrumdb-engine/backend/database-guidelines.md", "reason": "trait 方法语义、集成接线（engine 持有 storage crates）"}
+{"file": ".trellis/spec/ferrumdb-space/backend/database-guidelines.md", "reason": "superblock 布局、页分配、PageSource 契约"}
+{"file": ".trellis/spec/ferrumdb-space/backend/index.md", "reason": "Space/superblock 职责与文件布局；扩展区归属"}
+{"file": ".trellis/spec/ferrumdb-page/backend/database-guidelines.md", "reason": "Schema/ColumnType/Value 结构；serde derive 位置"}
+{"file": ".trellis/spec/ferrumdb-btree/backend/index.md", "reason": "PersistentBtree::open 契约、root id 语义、依赖约束"}
+{"file": "docs/plan.md", "reason": "阶段 7 目标与验收；catalog 持久化提示（研究资料）"}

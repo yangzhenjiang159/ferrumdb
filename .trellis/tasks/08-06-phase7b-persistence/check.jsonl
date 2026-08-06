@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/ferrumdb-engine/backend/quality-guidelines.md", "reason": "engine 质量门：object-safe、doc、依赖方向（engine 持有 storage）"}
+{"file": ".trellis/spec/ferrumdb-space/backend/quality-guidelines.md", "reason": "superblock 布局测试、磁盘格式变更需 round-trip + 篡改检测"}
+{"file": ".trellis/spec/ferrumdb-btree/backend/quality-guidelines.md", "reason": "btree 不依赖 wal/space 约束；open 重开测试"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "跨层数据流（catalog → superblock、WAL → Space 恢复）审查清单"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "catalog 序列化复用、WAL 包装层避免重复实现"}
