@@ -83,7 +83,7 @@ mod tests {
         // Record 2: page 0, offset 0, payload "after-cp"
         w.append(0, 0, b"after-cp").unwrap();
 
-        let mut page0 = vec![0u8; 16];
+        let mut page0 = [0u8; 16];
         w.recover(|rec| {
             if rec.page_id == 0 {
                 assert!(rec.offset as usize + rec.payload.len() <= page0.len());
@@ -105,7 +105,7 @@ mod tests {
         {
             let mut w = Wal::create(&path).unwrap();
             w.append(0, 0, b"good").unwrap();
-            let mut f = std::fs::OpenOptions::new()
+            let f = std::fs::OpenOptions::new()
                 .read(true)
                 .write(true)
                 .open(&path)
@@ -115,7 +115,7 @@ mod tests {
         }
         // open() should succeed; recover() should not error (Truncated = EOF).
         let mut w = Wal::open(&path).unwrap();
-        let mut page0 = vec![0u8; 16];
+        let mut page0 = [0u8; 16];
         let result = w.recover(|rec| {
             if rec.page_id == 0 {
                 page0[..rec.payload.len()].copy_from_slice(&rec.payload);
@@ -199,7 +199,7 @@ mod tests {
         assert_eq!(wal.checkpoint_lsn(), 0);
         let mut pages: std::collections::HashMap<u32, Vec<u8>> = std::collections::HashMap::new();
         wal.recover(|rec| {
-            let entry = pages.entry(rec.page_id).or_insert_with(|| Vec::new());
+            let entry = pages.entry(rec.page_id).or_default();
             let needed = rec.offset as usize + rec.payload.len();
             if entry.len() < needed {
                 entry.resize(needed, 0);
@@ -225,7 +225,7 @@ mod tests {
         }
         let mut wal = Wal::open(&path).unwrap();
         assert_eq!(wal.checkpoint_lsn(), 1);
-        let mut page0 = vec![0u8; 16];
+        let mut page0 = [0u8; 16];
         wal.recover(|rec| {
             if rec.page_id == 0 {
                 let end = (rec.offset as usize + rec.payload.len()).min(page0.len());

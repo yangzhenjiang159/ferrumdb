@@ -236,7 +236,7 @@ mod tests {
     fn create_then_open_round_trip() {
         let path = tmp_path();
         {
-            let mut space = Space::create(&path).unwrap();
+            let space = Space::create(&path).unwrap();
             assert_eq!(space.page_count(), 1);
             assert_eq!(space.superblock().magic, PAGE_MAGIC);
         }
