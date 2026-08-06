@@ -306,31 +306,20 @@ impl PersistentBtree {
     /// 删除一个 key。返回是否实际删除了某条记录。
     ///
     /// v1 简化：找到则从叶子中移除；节点下溢暂不修复（v2 实现 rebalance / merge）。
+    ///
+    /// 叶子查找与 [`Self::get`] 一致：下探到可能含 key 的最左叶子后，沿 `next_leaf`
+    /// 叶子链表继续找——B+Tree 的 key 不一定落在分隔键匹配的同一叶子里。
     pub fn delete<S: PageSource + ?Sized>(
         &mut self,
         source: &mut S,
         key: &[u8],
     ) -> Result<bool, BTreeError> {
-        let mut cur = self.root_page_id;
+        // Descend to the leftmost leaf that could contain `key`.
+        let mut page_id = self.root_page_id;
         loop {
-            let page = source.read_page(cur)?;
-            let node = decode_node_from_page(&page)?;
-            match node {
-                DecodedNode::Leaf { mut keys, mut values, next_leaf } => {
-                    let idx = lower_bound_keys(&keys, key);
-                    if idx < keys.len() && keys[idx].as_slice() == key {
-                        keys.remove(idx);
-                        values.remove(idx);
-                        let new_page = build_leaf_page(cur, &keys, &values, next_leaf)?;
-                        source.write_page(cur, &new_page)?;
-                        // Also walk the leaf chain to verify (B+Tree correctness:
-                        // if key is in a deeper leaf, the first leaf we hit might not have it).
-                        // For v1, we trust the descent path + first leaf.
-                        self.len -= 1;
-                        return Ok(true);
-                    }
-                    return Ok(false);
-                }
+            let page = source.read_page(page_id)?;
+            match decode_node_from_page(&page)? {
+                DecodedNode::Leaf { .. } => break,
                 DecodedNode::Internal { keys, children } => {
                     let idx = lower_bound_keys(&keys, key);
                     let child_idx = if idx < keys.len() && keys[idx].as_slice() == key {
@@ -338,10 +327,68 @@ impl PersistentBtree {
                     } else {
                         idx
                     };
-                    cur = children[child_idx];
+                    page_id = children[child_idx];
                 }
             }
         }
+        // Walk the leaf chain (mirrors `get`): remove the entry from whichever leaf
+        // actually holds `key`, or return false if absent.
+        let mut cur = Some(page_id);
+        while let Some(pid) = cur {
+            let page = source.read_page(pid)?;
+            let node = decode_node_from_page(&page)?;
+            match node {
+                DecodedNode::Leaf { mut keys, mut values, next_leaf } => {
+                    let idx = lower_bound_keys(&keys, key);
+                    if idx < keys.len() && keys[idx].as_slice() == key {
+                        keys.remove(idx);
+                        values.remove(idx);
+                        let new_page = build_leaf_page(pid, &keys, &values, next_leaf)?;
+                        source.write_page(pid, &new_page)?;
+                        self.len -= 1;
+                        return Ok(true);
+                    }
+                    // If our key is greater than all keys in this leaf, follow next_leaf.
+                    if idx >= keys.len() {
+                        cur = next_leaf;
+                        continue;
+                    }
+                    // idx < keys.len() but key < keys[idx] → key is not in tree.
+                    return Ok(false);
+                }
+                _ => return Err(BTreeError::InvalidNodeKind(0)),
+            }
+        }
+        Ok(false)
+    }
+
+    /// 遍历返回树中**所有**节点页 id（含 root、内部节点、叶子），供 `drop_table`
+    /// 释放页用。结果去重（叶子链遍历不会重复，但内部节点按层下探时以去重兜底）。
+    pub fn all_node_page_ids<S: PageSource + ?Sized>(
+        &self,
+        source: &mut S,
+    ) -> Result<Vec<u32>, BTreeError> {
+        let mut out = Vec::new();
+        let mut seen = std::collections::HashSet::new();
+        let mut stack = vec![self.root_page_id];
+        while let Some(pid) = stack.pop() {
+            if !seen.insert(pid) {
+                continue;
+            }
+            out.push(pid);
+            let page = source.read_page(pid)?;
+            match decode_node_from_page(&page)? {
+                DecodedNode::Internal { children, .. } => {
+                    stack.extend(children);
+                }
+                DecodedNode::Leaf { next_leaf, .. } => {
+                    if let Some(n) = next_leaf {
+                        stack.push(n);
+                    }
+                }
+            }
+        }
+        Ok(out)
     }
 }
 
@@ -518,6 +565,98 @@ mod integration_tests {
             assert_eq!(tree.get(&mut space, &k).unwrap(), Some(vec![0u8]));
         }
     }
+
+    #[test]
+    fn delete_removes_all_keys_after_multi_level_split() {
+        let (_dir, path) = open_temp_space();
+        let mut space = Space::create(&path).unwrap();
+        let mut tree = PersistentBtree::create(&mut space).unwrap();
+        let n = 1000u32;
+        for i in 0..n {
+            tree.insert(&mut space, i.to_be_bytes().to_vec(), (i * 2).to_be_bytes().to_vec())
+                .unwrap();
+        }
+        // 1000 > ORDER(64) 触发多层分裂；反向删除，确保每个 key 都能被定位到实际叶子。
+        for i in (0..n).rev() {
+            let k = i.to_be_bytes().to_vec();
+            assert!(
+                tree.delete(&mut space, &k).unwrap(),
+                "delete {i} should succeed"
+            );
+            // 删除后立即验证已删 key 不可见。
+            assert_eq!(tree.get(&mut space, &k).unwrap(), None, "key {i} gone");
+        }
+        assert_eq!(tree.len(), 0);
+        assert!(tree.scan_range(&mut space, &[], &[0xFFu8; 8]).unwrap().is_empty());
+        // 树已空，root 仍为叶子；继续 delete 返回 false（幂等）。
+        assert!(!tree.delete(&mut space, b"zzz").unwrap());
+    }
+
+    #[test]
+    fn delete_missing_key_returns_false() {
+        let (_dir, path) = open_temp_space();
+        let mut space = Space::create(&path).unwrap();
+        let mut tree = PersistentBtree::create(&mut space).unwrap();
+        tree.insert(&mut space, b"a".to_vec(), vec![1]).unwrap();
+        assert!(!tree.delete(&mut space, b"missing").unwrap());
+        // 已存在 key 删除后，再删返回 false。
+        assert!(tree.delete(&mut space, b"a").unwrap());
+        assert!(!tree.delete(&mut space, b"a").unwrap());
+    }
+
+    #[test]
+    fn delete_interleaved_with_insert_preserves_remaining() {
+        let (_dir, path) = open_temp_space();
+        let mut space = Space::create(&path).unwrap();
+        let mut tree = PersistentBtree::create(&mut space).unwrap();
+        let n = 300u32;
+        for i in 0..n {
+            tree.insert(&mut space, i.to_be_bytes().to_vec(), vec![i as u8]).unwrap();
+        }
+        // 删除每隔一个 key。
+        for i in (0..n).step_by(2) {
+            assert!(tree.delete(&mut space, &i.to_be_bytes()).unwrap());
+        }
+        // 剩余奇数 key 仍可查。
+        for i in 1..n {
+            if i % 2 == 1 {
+                assert_eq!(tree.get(&mut space, &i.to_be_bytes()).unwrap(), Some(vec![i as u8]));
+            } else {
+                assert_eq!(tree.get(&mut space, &i.to_be_bytes()).unwrap(), None);
+            }
+        }
+    }
+
+    #[test]
+    fn all_node_page_ids_covers_entire_tree() {
+        let (_dir, path) = open_temp_space();
+        let mut space = Space::create(&path).unwrap();
+        let mut tree = PersistentBtree::create(&mut space).unwrap();
+        // 空树：仅 root。
+        let ids = tree.all_node_page_ids(&mut space).unwrap();
+        assert_eq!(ids, vec![tree.root_page_id()]);
+
+        // 插入触发多层分裂。
+        for i in 0..1000u32 {
+            tree.insert(&mut space, i.to_be_bytes().to_vec(), vec![i as u8]).unwrap();
+        }
+        assert!(tree.height() >= 2, "should have grown");
+        let ids = tree.all_node_page_ids(&mut space).unwrap();
+        let unique: std::collections::HashSet<u32> = ids.iter().copied().collect();
+        assert_eq!(ids.len(), unique.len(), "ids must be unique");
+        assert!(unique.contains(&tree.root_page_id()));
+
+        // 验证每个返回的页都是可读的索引页，且根可达性成立：按 BFS 栈逻辑，
+        // 能读到的节点数 == 返回数。
+        let mut readable = 0u32;
+        for &id in &ids {
+            let page = space.read_page(id).unwrap();
+            assert_eq!(page.page_type(), ferrumdb_page::PageType::Index);
+            readable += 1;
+        }
+        assert_eq!(readable as usize, ids.len());
+    }
+
 
     #[test]
     fn scan_range_persisted() {
