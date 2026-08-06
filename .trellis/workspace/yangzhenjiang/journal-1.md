@@ -44,3 +44,42 @@
 ### Next Steps
 
 - 阶段7：StorageEngine 整合（catalog 持久化、update/delete 及索引维护、BufferPool 接入）
+
+
+## Session 2: 阶段7a：DML 补全（update/delete/drop_table）
+
+**Date**: 2026-08-06
+**Task**: 阶段7a：DML 补全（update/delete/drop_table）
+**Branch**: `master`
+
+### Summary
+
+实现 StorageEngine 剩余写路径：update（主键不可变、索引列变则删旧插新、唯一先探测）、delete（幂等）、drop_table（释放全部树页）；修复 btree delete 漏删（叶子链遍历），新增 all_node_page_ids；新增 RowNotFound 变体。122 测试全绿、clippy 干净。
+
+### Main Changes
+
+- 修复 PersistentBtree::delete 漏删：镜像 get 的 next_leaf 叶子链遍历，高分裂场景不漏删
+- 新增 PersistentBtree::all_node_page_ids（BFS 去重），供 drop_table 释放页
+- engine 实现 update/delete/drop_table；catalog 新增 remove；EngineError 新增 RowNotFound
+- 集成测试 AC1-AC5：update 索引一致性/RowNotFound/改pk拒绝/唯一冲突、delete 幂等、drop_table 页复用
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `96a0354` | (see git log) |
+| `39eba2c` | (see git log) |
+| `e62ccf2` | (see git log) |
+| `0a255fe` | (see git log) |
+
+### Testing
+
+- [OK] cargo build 0 error；122 测试全绿；clippy -D warnings 干净；sql object-safe 通过
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 阶段7b：catalog 持久化（JSON superblock 扩展区）+ WAL 整页 redo + 崩溃恢复
